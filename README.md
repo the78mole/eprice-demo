@@ -1,86 +1,86 @@
 # Disclaimer
 
-Dieses Projekt wurde komplett mit GitHub Copilot (Claude Sonnet 4) erstellt. Der Prompt lautete wir folgt:
+This project was completely created with GitHub Copilot (Claude Sonnet 4). The prompt was as follows:
 
 ```text
-Erstelle mir bitte ein Rust-Projekt, das über die API https://api.energy-charts.info/ die Strompreise für heute abfragt und den Durchschnittspreis ermittelt.
+Please create a Rust project that queries today's electricity prices via the API https://api.energy-charts.info/ and calculates the average price.
 ```
 
-# Strompreise Deutschland 🔌
+# Germany Electricity Prices 🔌
 
-Ein Rust-Programm, das die aktuellen Strompreise für Deutschland über die Energy Charts API abfragt und den Durchschnittspreis berechnet.
+A Rust program that queries current electricity prices for Germany via the Energy Charts API and calculates the average price.
 
 ## Features
 
-- 📊 Abrufen der tagesaktuellen Strompreise für Deutschland
-- 💰 Berechnung des Durchschnittspreises
-- 📈 Anzeige von Minimum- und Maximum-Preisen
-- ⏰ Auflistung der ersten 5 Stundenpreise
-- 🛡️ Robuste Fehlerbehandlung
-- 🎨 Benutzerfreundliche Ausgabe mit Emojis
+- 📊 Fetch daily electricity prices for Germany
+- 💰 Calculate average price
+- 📈 Display minimum and maximum prices
+- ⏰ List the first 5 hourly prices
+- 🛡️ Robust error handling
+- 🎨 User-friendly output with emojis
 
 ## Installation
 
-Stellen Sie sicher, dass Rust installiert ist. Falls nicht, installieren Sie es von [rustup.rs](https://rustup.rs/).
+Make sure Rust is installed. If not, install it from [rustup.rs](https://rustup.rs/).
 
-## Verwendung
+## Usage
 
 ```bash
-# Projekt klonen/herunterladen
+# Clone/download project
 git clone <repository-url>
-cd strompreise-api
+cd electricity-prices-api
 
-# Programm ausführen
+# Run program
 cargo run
 ```
 
-## Beispiel-Ausgabe
+## Example Output
 
 ```
-🔌 Strompreise Deutschland - Energy Charts API
-==============================================
-📅 Abfrage für Datum: 2025-09-19
-Anfrage an Energy Charts API: https://api.energy-charts.info/price?country=de&start=2025-09-19&end=2025-09-19
+🔌 Germany Electricity Prices - Energy Charts API
+==================================================
+📅 Query for date: 2025-09-19
+Request to Energy Charts API: https://api.energy-charts.info/price?country=de&start=2025-09-19&end=2025-09-19
 
-✅ Daten erfolgreich abgerufen!
-📄 Lizenz: CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de
+✅ Data successfully retrieved!
+📄 License: CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de
 
-📊 Strompreis-Statistiken für heute:
-💰 Durchschnittspreis: 96.48 EUR / MWh
-📉 Niedrigster Preis:  0.00 EUR / MWh
-📈 Höchster Preis:     409.24 EUR / MWh
-📋 Anzahl Datenpunkte: 24
+📊 Electricity Price Statistics for Today:
+💰 Average Price: 96.48 EUR / MWh
+📉 Lowest Price:  0.00 EUR / MWh
+📈 Highest Price: 409.24 EUR / MWh
+📋 Data Points:   24
 
-⏰ Erste 5 Stundenpreise:
-   22:00:00 Uhr: 74.09 EUR / MWh
-   23:00:00 Uhr: 72.47 EUR / MWh
-   00:00:00 Uhr: 73.45 EUR / MWh
-   01:00:00 Uhr: 73.70 EUR / MWh
-   02:00:00 Uhr: 74.02 EUR / MWh
-   ... und 19 weitere Stunden
+⏰ First 5 hourly prices:
+   22:00: 74.09 EUR / MWh
+   23:00: 72.47 EUR / MWh
+   00:00: 73.45 EUR / MWh
+   01:00: 73.70 EUR / MWh
+   02:00: 74.02 EUR / MWh
+   ... and 19 more hours
 ```
 
-## API-Quelle
+## API Source
 
-Dieses Programm nutzt die [Energy Charts API](https://api.energy-charts.info/) der Bundesnetzagentur.
+This program uses the [Energy Charts API](https://api.energy-charts.info/) from the Bundesnetzagentur.
 
-**Lizenz der Daten:** CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de
+**Data License:** CC BY 4.0 (creativecommons.org/licenses/by/4.0) from Bundesnetzagentur | SMARD.de
 
-## Abhängigkeiten
+## Dependencies
 
-- `tokio` - Asynchrone Runtime
-- `reqwest` - HTTP-Client
-- `serde` - JSON-Serialisierung/Deserialisierung
-- `chrono` - Datum/Zeit-Verarbeitung
-- `anyhow` - Erweiterte Fehlerbehandlung
+- `tokio` - Asynchronous runtime
+- `reqwest` - HTTP client
+- `serde` - JSON serialization/deserialization
+- `chrono` - Date/time processing
+- `anyhow` - Enhanced error handling
 
-## Technische Details
+## Technical Details
 
-- Das Programm ruft die Energy Charts API für das aktuelle Datum auf
-- Die API liefert stündliche Strompreise in EUR/MWh
-- Alle 24 Stunden eines Tages werden abgerufen und statistisch ausgewertet
-- Die Zeitstempel werden von Unix-Timestamps in lesbare Zeiten umgewandelt
+- The program calls the Energy Charts API for the current date
+- The API provides hourly electricity prices in EUR/MWh
+- All 24 hours of a day are retrieved and statistically evaluated
+- Timestamps are converted from Unix timestamps to readable times
 
-## Lizenz
+## License
 
-Dieses Projekt steht unter der MIT-Lizenz.
+This project is under the MIT License.

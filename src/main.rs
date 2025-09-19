@@ -19,23 +19,23 @@ async fn fetch_energy_prices(date: &str) -> Result<EnergyChartsResponse> {
         date, date
     );
     
-    println!("Anfrage an Energy Charts API: {}", url);
+    println!("Request to Energy Charts API: {}", url);
     
     let client = reqwest::Client::new();
     let response = client
         .get(&url)
         .send()
         .await
-        .context("Fehler beim Senden der HTTP-Anfrage")?;
+        .context("Error sending HTTP request")?;
     
     if !response.status().is_success() {
-        anyhow::bail!("API-Anfrage fehlgeschlagen: {}", response.status());
+        anyhow::bail!("API request failed: {}", response.status());
     }
     
     let energy_data: EnergyChartsResponse = response
         .json()
         .await
-        .context("Fehler beim Parsen der JSON-Antwort")?;
+        .context("Error parsing JSON response")?;
     
     Ok(energy_data)
 }
@@ -51,7 +51,7 @@ fn calculate_average_price(prices: &[f64]) -> f64 {
 
 fn format_price_statistics(data: &EnergyChartsResponse) -> String {
     if data.price.is_empty() {
-        return "Keine Preisdaten verfügbar".to_string();
+        return "No price data available".to_string();
     }
     
     let average = calculate_average_price(&data.price);
@@ -59,11 +59,11 @@ fn format_price_statistics(data: &EnergyChartsResponse) -> String {
     let max_price = data.price.iter().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
     
     format!(
-        "📊 Strompreis-Statistiken für heute:\n\
-         💰 Durchschnittspreis: {:.2} {}\n\
-         📉 Niedrigster Preis:  {:.2} {}\n\
-         📈 Höchster Preis:     {:.2} {}\n\
-         📋 Anzahl Datenpunkte: {}",
+        "📊 Electricity Price Statistics for Today:\n\
+         💰 Average Price: {:.2} {}\n\
+         📉 Lowest Price:  {:.2} {}\n\
+         📈 Highest Price: {:.2} {}\n\
+         📋 Data Points:   {}",
         average, data.unit,
         min_price, data.unit,
         max_price, data.unit,
@@ -73,27 +73,27 @@ fn format_price_statistics(data: &EnergyChartsResponse) -> String {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("🔌 Strompreise Deutschland - Energy Charts API");
-    println!("==============================================");
+    println!("🔌 Germany Electricity Prices - Energy Charts API");
+    println!("==================================================");
     
-    // Heutiges Datum ermitteln
+    // Get today's date
     let today = Local::now().date_naive();
     let date_string = today.format("%Y-%m-%d").to_string();
     
-    println!("📅 Abfrage für Datum: {}", date_string);
+    println!("📅 Query for date: {}", date_string);
     
-    // Strompreise abrufen
+    // Fetch electricity prices
     match fetch_energy_prices(&date_string).await {
         Ok(energy_data) => {
-            println!("\n✅ Daten erfolgreich abgerufen!");
-            println!("📄 Lizenz: {}", energy_data.license_info);
+            println!("\n✅ Data successfully retrieved!");
+            println!("📄 License: {}", energy_data.license_info);
             
-            // Statistiken anzeigen
+            // Display statistics
             println!("\n{}", format_price_statistics(&energy_data));
             
-            // Zeitliche Aufschlüsselung (optional, erste 5 Einträge)
+            // Time breakdown (optional, first 5 entries)
             if !energy_data.unix_seconds.is_empty() && !energy_data.price.is_empty() {
-                println!("\n⏰ Erste 5 Stundenpreise:");
+                println!("\n⏰ First 5 hourly prices:");
                 for (&timestamp, &price) in energy_data.unix_seconds
                     .iter()
                     .zip(energy_data.price.iter())
@@ -101,18 +101,18 @@ async fn main() -> Result<()> {
                 {
                     let datetime = chrono::DateTime::from_timestamp(timestamp, 0)
                         .map(|dt| dt.format("%H:%M").to_string())
-                        .unwrap_or_else(|| "Unbekannt".to_string());
+                        .unwrap_or_else(|| "Unknown".to_string());
                     
-                    println!("   {}:00 Uhr: {:.2} {}", datetime, price, energy_data.unit);
+                    println!("   {}:00: {:.2} {}", datetime, price, energy_data.unit);
                 }
                 
                 if energy_data.price.len() > 5 {
-                    println!("   ... und {} weitere Stunden", energy_data.price.len() - 5);
+                    println!("   ... and {} more hours", energy_data.price.len() - 5);
                 }
             }
         }
         Err(e) => {
-            eprintln!("❌ Fehler beim Abrufen der Strompreise: {}", e);
+            eprintln!("❌ Error retrieving electricity prices: {}", e);
             std::process::exit(1);
         }
     }
