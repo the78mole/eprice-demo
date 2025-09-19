@@ -52,11 +52,11 @@ Request to Energy Charts API: https://api.energy-charts.info/price?country=de&st
 📋 Data Points:   24
 
 ⏰ First 5 hourly prices:
-   22:00: 74.09 EUR / MWh
-   23:00: 72.47 EUR / MWh
    00:00: 73.45 EUR / MWh
    01:00: 73.70 EUR / MWh
    02:00: 74.02 EUR / MWh
+   03:00: 75.15 EUR / MWh
+   04:00: 76.88 EUR / MWh
    ... and 19 more hours
 ```
 
