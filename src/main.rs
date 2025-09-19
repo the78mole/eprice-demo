@@ -91,23 +91,42 @@ async fn main() -> Result<()> {
             // Display statistics
             println!("\n{}", format_price_statistics(&energy_data));
             
-            // Time breakdown (optional, first 5 entries)
+            // Time breakdown (optional, first 5 entries) - filter to current day only
             if !energy_data.unix_seconds.is_empty() && !energy_data.price.is_empty() {
-                println!("\n⏰ First 5 hourly prices:");
-                for (&timestamp, &price) in energy_data.unix_seconds
+                // Filter data to only include timestamps from the requested date
+                let filtered_data: Vec<(i64, f64)> = energy_data.unix_seconds
                     .iter()
                     .zip(energy_data.price.iter())
-                    .take(5) 
-                {
-                    let datetime = chrono::DateTime::from_timestamp(timestamp, 0)
-                        .map(|dt| dt.format("%H:%M").to_string())
-                        .unwrap_or_else(|| "Unknown".to_string());
+                    .filter_map(|(&timestamp, &price)| {
+                        if let Some(datetime) = chrono::DateTime::from_timestamp(timestamp, 0) {
+                            let local_datetime = datetime.with_timezone(&chrono::Local);
+                            // Check if the date matches the requested date
+                            if local_datetime.date_naive() == today {
+                                Some((timestamp, price))
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                if !filtered_data.is_empty() {
+                    println!("\n⏰ First 5 hourly prices:");
+                    for (timestamp, price) in filtered_data.iter().take(5) {
+                        let datetime = chrono::DateTime::from_timestamp(*timestamp, 0)
+                            .map(|dt| dt.with_timezone(&chrono::Local).format("%H:%M").to_string())
+                            .unwrap_or_else(|| "Unknown".to_string());
+                        
+                        println!("   {}:00: {:.2} {}", datetime, price, energy_data.unit);
+                    }
                     
-                    println!("   {}:00: {:.2} {}", datetime, price, energy_data.unit);
-                }
-                
-                if energy_data.price.len() > 5 {
-                    println!("   ... and {} more hours", energy_data.price.len() - 5);
+                    if filtered_data.len() > 5 {
+                        println!("   ... and {} more hours", filtered_data.len() - 5);
+                    }
+                } else {
+                    println!("\n⏰ No hourly prices found for the requested date");
                 }
             }
         }
