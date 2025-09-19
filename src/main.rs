@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
-use chrono::Local;
+use chrono::{TimeZone, Utc};
+use chrono_tz::Europe::Berlin;
 use reqwest;
 use serde::Deserialize;
 
@@ -13,10 +14,10 @@ struct EnergyChartsResponse {
     deprecated: bool,
 }
 
-async fn fetch_energy_prices(date: &str) -> Result<EnergyChartsResponse> {
+async fn fetch_energy_prices(start_date: &str, end_date: &str) -> Result<EnergyChartsResponse> {
     let url = format!(
         "https://api.energy-charts.info/price?country=de&start={}&end={}",
-        date, date
+        start_date, end_date
     );
 
     println!("Request to Energy Charts API: {}", url);
@@ -79,33 +80,49 @@ async fn main() -> Result<()> {
     println!("🔌 Germany Electricity Prices - Energy Charts API");
     println!("==================================================");
 
-    // Get today's date
-    let today = Local::now().date_naive();
-    let date_string = today.format("%Y-%m-%d").to_string();
+    // Get today's date in German timezone
+    let today_utc = Utc::now();
+    let today_berlin = today_utc.with_timezone(&Berlin);
+    let today = today_berlin.date_naive();
+    
+    // Convert German date to UTC range for API query
+    // We need to get the full day (00:00 - 23:59) in German time
+    let berlin_start = Berlin.from_local_datetime(&today.and_hms_opt(0, 0, 0).unwrap()).unwrap();
+    let berlin_end = Berlin.from_local_datetime(&today.and_hms_opt(23, 59, 59).unwrap()).unwrap();
+    
+    // Convert to UTC for API request
+    let utc_start = berlin_start.with_timezone(&Utc);
+    let utc_end = berlin_end.with_timezone(&Utc);
+    
+    let start_date = utc_start.format("%Y-%m-%d").to_string();
+    let end_date = utc_end.format("%Y-%m-%d").to_string();
 
-    println!("📅 Query for date: {}", date_string);
+    println!("📅 Query for German date: {}", today.format("%Y-%m-%d"));
+    println!("🌍 UTC range: {} {} to {} {}", 
+        utc_start.format("%Y-%m-%d"), 
+        utc_start.format("%H:%M:%S"),
+        utc_end.format("%Y-%m-%d"), 
+        utc_end.format("%H:%M:%S")
+    );
 
     // Fetch electricity prices
-    match fetch_energy_prices(&date_string).await {
+    match fetch_energy_prices(&start_date, &end_date).await {
         Ok(energy_data) => {
             println!("\n✅ Data successfully retrieved!");
             println!("📄 License: {}", energy_data.license_info);
 
-            // Display statistics
-            println!("\n{}", format_price_statistics(&energy_data));
-
-            // Time breakdown (optional, first 5 entries) - filter to current day only
+            // Time breakdown (all entries) - filter to current day only
             if !energy_data.unix_seconds.is_empty() && !energy_data.price.is_empty() {
-                // Filter data to only include timestamps from the requested date
+                // Filter data to only include timestamps from the requested German date
                 let filtered_data: Vec<(i64, f64)> = energy_data
                     .unix_seconds
                     .iter()
                     .zip(energy_data.price.iter())
                     .filter_map(|(&timestamp, &price)| {
                         if let Some(datetime) = chrono::DateTime::from_timestamp(timestamp, 0) {
-                            let local_datetime = datetime.with_timezone(&chrono::Local);
-                            // Check if the date matches the requested date
-                            if local_datetime.date_naive() == today {
+                            let berlin_datetime = datetime.with_timezone(&Berlin);
+                            // Check if the date matches the requested German date
+                            if berlin_datetime.date_naive() == today {
                                 Some((timestamp, price))
                             } else {
                                 None
@@ -117,18 +134,25 @@ async fn main() -> Result<()> {
                     .collect();
 
                 if !filtered_data.is_empty() {
-                    println!("\n⏰ First 5 hourly prices:");
-                    for (timestamp, price) in filtered_data.iter().take(5) {
+                    println!("\n⏰ All hourly prices for today:");
+                    for (timestamp, price) in filtered_data.iter() {
                         let datetime = chrono::DateTime::from_timestamp(*timestamp, 0)
-                            .map(|dt| dt.with_timezone(&chrono::Local).format("%H:%M").to_string())
+                            .map(|dt| dt.with_timezone(&Berlin).format("%H:%M").to_string())
                             .unwrap_or_else(|| "Unknown".to_string());
 
-                        println!("   {}:00: {:.2} {}", datetime, price, energy_data.unit);
+                        println!("   {}: {:.2} {}", datetime, price, energy_data.unit);
                     }
-
-                    if filtered_data.len() > 5 {
-                        println!("   ... and {} more hours", filtered_data.len() - 5);
-                    }
+                    
+                    // Display statistics for filtered data only
+                    let filtered_prices: Vec<f64> = filtered_data.iter().map(|(_, price)| *price).collect();
+                    let filtered_response = EnergyChartsResponse {
+                        license_info: energy_data.license_info.clone(),
+                        unix_seconds: filtered_data.iter().map(|(ts, _)| *ts).collect(),
+                        price: filtered_prices,
+                        unit: energy_data.unit.clone(),
+                        deprecated: energy_data.deprecated,
+                    };
+                    println!("\n{}", format_price_statistics(&filtered_response));
                 } else {
                     println!("\n⏰ No hourly prices found for the requested date");
                 }
